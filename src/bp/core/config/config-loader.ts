@@ -1,8 +1,8 @@
 import { BotConfig, Logger } from 'botpress/sdk'
 import { ObjectCache } from 'common/object-cache'
+import { GhostService } from 'core/bpfs'
 import { calculateHash, stringify } from 'core/misc/utils'
-import ModuleResolver from 'core/modules/resolver'
-import { GhostService } from 'core/services'
+import { ModuleResolver } from 'core/modules'
 import { TYPES } from 'core/types'
 import { FatalError } from 'errors'
 import fs from 'fs'
@@ -34,7 +34,7 @@ export class ConfigProvider {
     @inject(TYPES.ObjectCache) private cache: ObjectCache
   ) {
     this.cache.events.on('invalidation', async key => {
-      if (key === 'object::data/global/botpress.config.json') {
+      if (key === 'object::data/global/botpress.config.json' || key === 'file::data/global/botpress.config.json') {
         this._botpressConfigCache = undefined
         const config = await this.getBotpressConfig()
 
@@ -113,6 +113,10 @@ export class ConfigProvider {
     const content = await this.ghostService.global().readFileAsString('/', 'botpress.config.json')
     const config = _.merge(JSON.parse(content), partialConfig)
 
+    await this.setBotpressConfig(config, clearHash)
+  }
+
+  async setBotpressConfig(config: BotpressConfig, clearHash?: boolean): Promise<void> {
     await this.ghostService.global().upsertFile('/', 'botpress.config.json', stringify(config))
 
     if (clearHash) {
@@ -184,7 +188,7 @@ export class ConfigProvider {
 
     // here it's ok to use the module resolver because we are discovering the built-in modules only
     const resolver = new ModuleResolver(this.logger)
-    return resolver.getModulesList().map(module => {
+    return (await resolver.getModulesList()).map(module => {
       return { location: `MODULES_ROOT/${module}`, enabled: enabledModules.includes(module) }
     })
   }
@@ -239,12 +243,12 @@ export class ConfigProvider {
     const defaultConfig = {
       admin: {
         title: 'Botpress Admin Panel',
-        favicon: 'assets/ui-admin/public/favicon.ico',
+        favicon: 'assets/admin/ui/public/favicon.ico',
         customCss: ''
       },
       studio: {
         title: 'Botpress Studio',
-        favicon: 'assets/ui-studio/public/img/favicon.png',
+        favicon: 'assets/studio/ui/public/img/favicon.png',
         customCss: ''
       }
     }

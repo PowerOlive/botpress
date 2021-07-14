@@ -18,7 +18,7 @@ async function run() {
         'Please set a proper description to your Pull Request. Describe why, how and what. Those are mandatory for the review process.'
       )
     }
-    if (!pull_request.requested_reviewers.length) {
+    if (!pull_request.requested_reviewers.length && !pull_request.requested_teams.length) {
       core.setFailed('Request at least one reviewer on your Pull Request')
     }
 
@@ -32,7 +32,7 @@ async function run() {
         per_page: 300
       }
 
-      const files = await octokit.pulls.listFiles(options)
+      const files = await octokit.rest.pulls.listFiles(options)
 
       const hasTests = files.data.some(f => f.filename.includes('.test.'))
       if (!hasTests) {

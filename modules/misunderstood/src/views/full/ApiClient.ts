@@ -53,12 +53,13 @@ class ApiClient {
     })
   }
 
-  getEvent(id: string) {
+  getEvent(id: number) {
     return this.getForModule(`/events/${id}`)
   }
 
-  updateStatus(id: string, status: FLAGGED_MESSAGE_STATUS, resolutionData?: ResolutionData) {
-    return this.postForModule(`/events/${id}/status`, {
+  updateStatuses(ids: number[], status: FLAGGED_MESSAGE_STATUS, resolutionData?: ResolutionData) {
+    return this.postForModule('/events/status', {
+      ids,
       status,
       ...resolutionData,
       resolutionParams:
@@ -68,6 +69,10 @@ class ApiClient {
 
   applyAllPending() {
     return this.postForModule('/apply-all-pending')
+  }
+
+  deleteAll(status: FLAGGED_MESSAGE_STATUS) {
+    return this.postForModule('/delete-all', { status })
   }
 
   getRangeUnix(dateRange?: DateRange) {
